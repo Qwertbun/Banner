@@ -42,6 +42,7 @@ public abstract class MixinPrimaryLevelData implements InjectionPrimaryLevelData
 
     @Shadow private boolean thundering;
     @Shadow public LevelSettings settings;
+    @Shadow  public abstract Difficulty getDifficulty();
     @Unique
     public ServerLevel world;
     @Unique
@@ -90,10 +91,10 @@ public abstract class MixinPrimaryLevelData implements InjectionPrimaryLevelData
 
     @Inject(method = "setDifficulty", at = @At("RETURN"))
     private void banner$sendDiffChange(Difficulty newDifficulty, CallbackInfo ci) {
-        ClientboundChangeDifficultyPacket packet = new ClientboundChangeDifficultyPacket(newDifficulty, this.isDifficultyLocked());
+        ClientboundChangeDifficultyPacket packet = new ClientboundChangeDifficultyPacket(getDifficulty(), this.isDifficultyLocked());
         if (this.world != null) {
-            for (Player player : this.world.players()) {
-                ((ServerPlayer) player).connection.send(packet);
+            for (ServerPlayer player : this.world.players()) {
+                player.connection.send(packet);
             }
         }
     }
@@ -118,7 +119,12 @@ public abstract class MixinPrimaryLevelData implements InjectionPrimaryLevelData
     // CraftBukkit start - Add world and pdc
     @Override
     public void setWorld(ServerLevel world) {
+        if (this.world != null) {
+            return;
+        }
         this.world = world;
+        world.getWorld().readBukkitValues(pdc);
+        pdc = null;
     }
     // CraftBukkit end
 }
