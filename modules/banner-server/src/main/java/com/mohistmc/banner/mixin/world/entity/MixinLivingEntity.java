@@ -445,15 +445,6 @@ public abstract class MixinLivingEntity extends Entity implements InjectionLivin
      * @reason
      */
     @Overwrite
-    public boolean isAlive() {
-        return !this.isRemoved() && this.entityData.get(DATA_HEALTH_ID) > 0.0F;
-    }
-
-    /**
-     * @author wdog5
-     * @reason
-     */
-    @Overwrite
     public boolean hurt(DamageSource source, float amount) {
         if (this.isInvulnerableTo(source)) {
             return false;
@@ -956,8 +947,15 @@ public abstract class MixinLivingEntity extends Entity implements InjectionLivin
      */
     @Overwrite
     public boolean isPushable() {
-        return this.isAlive() && !this.onClimbable() && this.collides;
+        return this.isAlive() && !this.isSpectator() && !this.onClimbable() && this.collides;
     }
+
+    // CraftBukkit start - collidable API
+    @Override
+    public boolean canCollideWithBukkit(Entity entity) {
+        return this.isPushable() && this.collides != this.collidableExemptions.contains(entity.getUUID());
+    }
+    // CraftBukkit end
 
     @Redirect(method = "completeUsingItem", at = @At(value = "INVOKE", target = "Lnet/minecraft/world/item/ItemStack;finishUsingItem(Lnet/minecraft/world/level/Level;Lnet/minecraft/world/entity/LivingEntity;)Lnet/minecraft/world/item/ItemStack;"))
     private ItemStack banner$itemConsume(ItemStack itemStack, Level worldIn, LivingEntity
