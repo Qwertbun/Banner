@@ -169,7 +169,7 @@ public abstract class MixinServerLevel extends Level implements WorldGenLevel, I
     }
 
     @Inject(method = "<init>", at = @At(value = "RETURN"))
-    private void banner$initWorldServer(MinecraftServer minecraftServer, Executor executor, LevelStorageSource.LevelStorageAccess levelStorageAccess, ServerLevelData serverLevelData, ResourceKey resourceKey, LevelStem levelStem, ChunkProgressListener chunkProgressListener, boolean bl, long l, List list, boolean bl2, RandomSequences randomSequences, CallbackInfo ci) {
+    private void banner$initWorldServer(MinecraftServer minecraftServer, Executor executor, LevelStorageSource.LevelStorageAccess levelStorageAccess, ServerLevelData serverLevelData, ResourceKey<Level> resourceKey, LevelStem levelStem, ChunkProgressListener chunkProgressListener, boolean bl, long l, List<CustomSpawner> list, boolean bl2, RandomSequences randomSequences, CallbackInfo ci) {
         this.banner$setPvpMode(minecraftServer.isPvpAllowed());
         this.convertable = levelStorageAccess;
         var typeKey = ((InjectionLevelStorageAccess) levelStorageAccess).bridge$getTypeKey();
@@ -197,9 +197,6 @@ public abstract class MixinServerLevel extends Level implements WorldGenLevel, I
         this.uuid = WorldUUID.getUUID(levelStorageAccess.getDimensionPath(this.dimension()).toFile());
         this.getWorldBorder().banner$setWorld((ServerLevel) (Object) this);
         this.K.setWorld((ServerLevel) (Object) this);
-        var data = this.getDataStorage().computeIfAbsent(LevelPersistentData::new,
-                () -> new LevelPersistentData(null), "bukkit_pdc");
-        this.getWorld().readBukkitValues(data.getTag());
     }
 
     @Redirect(method = "<init>", at = @At(value = "INVOKE",
