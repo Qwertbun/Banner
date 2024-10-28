@@ -48,7 +48,7 @@ public abstract class MixinAbstractArrow extends Projectile {
         EntityCombustByEntityEvent combustEvent = new EntityCombustByEntityEvent(this.getBukkitEntity(), entity.getBukkitEntity(), seconds);
         Bukkit.getPluginManager().callEvent(combustEvent);
         if (!combustEvent.isCancelled()) {
-             entity.banner$setSecondsOnFire(combustEvent.getDuration(), false);
+             entity.setSecondsOnFire(combustEvent.getDuration(), false);
         }
     }
 

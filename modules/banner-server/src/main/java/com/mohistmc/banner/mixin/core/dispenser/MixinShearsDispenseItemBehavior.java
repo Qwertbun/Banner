@@ -1,8 +1,7 @@
 package com.mohistmc.banner.mixin.core.dispenser;
 
-import java.util.List;
-
 import com.mohistmc.banner.bukkit.BukkitFieldHooks;
+import java.util.List;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.BlockSource;
 import net.minecraft.core.Direction;

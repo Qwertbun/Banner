@@ -5,6 +5,7 @@ import com.mohistmc.banner.injection.world.level.entity.InjectionPersistentEntit
 import it.unimi.dsi.fastutil.longs.Long2ObjectMap;
 import java.io.IOException;
 import java.util.List;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
 import net.minecraft.world.entity.Entity;
@@ -43,7 +44,7 @@ public abstract class MixinPersistentEntitySectionManager<T extends EntityAccess
     @Shadow protected abstract void requestChunkLoad(long chunkPosValue);
 
     @Unique
-    private boolean banner$fireEvent = false;
+    private AtomicBoolean banner$fireEvent = new AtomicBoolean(false);
 
     @Override
     public void close(boolean save) throws IOException {
@@ -60,32 +61,32 @@ public abstract class MixinPersistentEntitySectionManager<T extends EntityAccess
      * @reason
      */
     @Overwrite
-    private boolean storeChunkSections(long l, Consumer<T> consumer) {
-        PersistentEntitySectionManager.ChunkLoadStatus chunkLoadStatus = (PersistentEntitySectionManager.ChunkLoadStatus)this.chunkLoadStatuses.get(l);
+    private boolean storeChunkSections(long chunkPosValue, Consumer<T> consumer) {
+        boolean callEvent = this.banner$fireEvent.getAndSet(false);
+        PersistentEntitySectionManager.ChunkLoadStatus chunkLoadStatus = this.chunkLoadStatuses.get(chunkPosValue);
         if (chunkLoadStatus == PersistentEntitySectionManager.ChunkLoadStatus.PENDING) {
             return false;
         } else {
-            List<T> list = (List)this.sectionStorage.getExistingSectionsInChunk(l).flatMap((entitySection) -> {
+            List<T> list = (List) this.sectionStorage.getExistingSectionsInChunk(chunkPosValue).flatMap((entitySection) -> {
                 return entitySection.getEntities().filter(EntityAccess::shouldBeSaved);
             }).collect(Collectors.toList());
             if (list.isEmpty()) {
                 if (chunkLoadStatus == PersistentEntitySectionManager.ChunkLoadStatus.LOADED) {
-                    this.permanentStorage.storeEntities(new ChunkEntities(new ChunkPos(l), ImmutableList.of()));
-                    if (banner$fireEvent) {
-                        CraftEventFactory.callEntitiesUnloadEvent(((EntityStorage) permanentStorage).level, new ChunkPos(l),
-                                list.stream().map(entity -> (Entity) entity).collect(Collectors.toList()));
+                    if (callEvent) {
+                        CraftEventFactory.callEntitiesUnloadEvent(((EntityStorage) permanentStorage).level, new ChunkPos(chunkPosValue), ImmutableList.of());
                     }
+                    this.permanentStorage.storeEntities(new ChunkEntities<>(new ChunkPos(chunkPosValue), ImmutableList.of()));
                 }
                 return true;
             } else if (chunkLoadStatus == PersistentEntitySectionManager.ChunkLoadStatus.FRESH) {
-                this.requestChunkLoad(l);
+                this.requestChunkLoad(chunkPosValue);
                 return false;
             } else {
-                this.permanentStorage.storeEntities(new ChunkEntities(new ChunkPos(l), list));
-                if (banner$fireEvent) {
-                    CraftEventFactory.callEntitiesUnloadEvent(((EntityStorage) permanentStorage).level, new ChunkPos(l),
+                if (callEvent) {
+                    CraftEventFactory.callEntitiesUnloadEvent(((EntityStorage) permanentStorage).level, new ChunkPos(chunkPosValue),
                             list.stream().map(entity -> (Entity) entity).collect(Collectors.toList()));
                 }
+                this.permanentStorage.storeEntities(new ChunkEntities<>(new ChunkPos(chunkPosValue), list));
                 list.forEach(consumer);
                 return true;
             }
@@ -94,7 +95,7 @@ public abstract class MixinPersistentEntitySectionManager<T extends EntityAccess
 
     @Inject(method = "processChunkUnload", at = @At("HEAD"))
     private void banner$fireEvent(long pChunkPosValue, CallbackInfoReturnable<Boolean> cir) {
-        banner$fireEvent = true;
+        this.banner$fireEvent.set(true); // Banner
     }
 
     @Inject(method = "processPendingLoads", locals = LocalCapture.CAPTURE_FAILHARD, at = @At(value = "INVOKE", shift = At.Shift.AFTER, remap = false, target = "Lit/unimi/dsi/fastutil/longs/Long2ObjectMap;put(JLjava/lang/Object;)Ljava/lang/Object;"))
@@ -113,9 +114,9 @@ public abstract class MixinPersistentEntitySectionManager<T extends EntityAccess
         return chunkLoadStatuses.get(pair) == PersistentEntitySectionManager.ChunkLoadStatus.PENDING;
     }
 
-    @Override
-    public boolean storeChunkSections(long i, Consumer<?> consumer, boolean callEvent) {
+    private boolean storeChunkSections(long i, Consumer<T> consumer, boolean callEvent) {
         // CraftBukkit start - add boolean for event call
-        return storeChunkSections(i, consumer, false);
+        this.banner$fireEvent.set(callEvent);
+        return storeChunkSections(i, consumer);
     }
 }

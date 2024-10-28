@@ -1,10 +1,8 @@
 package com.mohistmc.banner.mixin.world.item;
 
-import java.util.concurrent.atomic.AtomicReference;
-
 import com.llamalad7.mixinextras.sugar.Local;
+import java.util.concurrent.atomic.AtomicReference;
 import net.minecraft.core.BlockPos;
-import net.minecraft.core.Direction;
 import net.minecraft.network.protocol.game.ClientboundBlockUpdatePacket;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
@@ -37,7 +35,6 @@ import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.Redirect;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
-import org.spongepowered.asm.mixin.injection.callback.LocalCapture;
 
 @Mixin(BucketItem.class)
 public abstract class MixinBucketItem extends Item {

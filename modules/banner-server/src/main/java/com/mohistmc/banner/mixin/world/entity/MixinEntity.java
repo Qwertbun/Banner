@@ -8,6 +8,7 @@ import com.mohistmc.banner.injection.world.entity.InjectionEntity;
 import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 import net.minecraft.BlockUtil;
@@ -29,6 +30,7 @@ import net.minecraft.world.Nameable;
 import net.minecraft.world.damagesource.DamageSource;
 import net.minecraft.world.damagesource.DamageSources;
 import net.minecraft.world.entity.Entity;
+import net.minecraft.world.entity.Entity.RemovalReason;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.Mob;
@@ -38,10 +40,7 @@ import net.minecraft.world.entity.RelativeMovement;
 import net.minecraft.world.entity.item.ItemEntity;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
-import net.minecraft.world.item.enchantment.ProtectionEnchantment;
 import net.minecraft.world.level.Level;
-import net.minecraft.world.level.block.Block;
-import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.border.WorldBorder;
 import net.minecraft.world.level.entity.EntityAccess;
 import net.minecraft.world.level.gameevent.GameEvent;
@@ -232,10 +231,8 @@ public abstract class MixinEntity implements Nameable, EntityAccess, CommandSour
     public abstract boolean getSharedFlag(int p_20292_);
 
     @Shadow
-    public abstract void setRemainingFireTicks(int remainingFireTicks);
-
-    @Shadow
     private AABB bb;
+
     @Unique
     private CraftEntity bukkitEntity;
     @Unique
@@ -323,45 +320,30 @@ public abstract class MixinEntity implements Nameable, EntityAccess, CommandSour
         }
     }
 
+    public AtomicBoolean callEntityCombustEvent = new AtomicBoolean(true);
 
     @Override
     public void setSecondsOnFire(int i, boolean callEvent) {
-        if (callEvent) {
-            EntityCombustEvent event = new EntityCombustEvent(this.getBukkitEntity(), i);
-            this.level.getCraftServer().getPluginManager().callEvent(event);
-
-            if (event.isCancelled()) {
-                return;
-            }
-
-            i = event.getDuration();
-        }
+        this.callEntityCombustEvent.set(callEvent);
+        setSecondsOnFire(i);
     }
 
     @Inject(method = "setSecondsOnFire", at = @At("HEAD"))
     private void banner$setSecondsOnFire(int seconds, CallbackInfo ci) {
-        setSecondsOnFire(seconds, true);
-    }
-
-    @Override
-    public void banner$setSecondsOnFire(int i, boolean callEvent) {
-        if (callEvent) {
-            EntityCombustEvent event = new EntityCombustEvent(this.getBukkitEntity(), i);
+        if (this.callEntityCombustEvent.getAndSet(true)) {
+            EntityCombustEvent event = new EntityCombustEvent(this.getBukkitEntity(), seconds);
             this.level.getCraftServer().getPluginManager().callEvent(event);
 
             if (event.isCancelled()) {
                 return;
             }
-            i = event.getDuration();
-        }
-        int secs = i * 20;
-        if (((Entity) (Object) this) instanceof LivingEntity) {
-            secs = ProtectionEnchantment.getFireAfterDampener((LivingEntity) (Object) this, secs);
-        }
-        if (this.remainingFireTicks < secs) {
-            this.setRemainingFireTicks(secs);
+
+            seconds = event.getDuration();
         }
     }
+
+    @Shadow
+    public abstract void remove(RemovalReason removalReason);
 
     @Override
     public SoundEvent getSwimSound0() {

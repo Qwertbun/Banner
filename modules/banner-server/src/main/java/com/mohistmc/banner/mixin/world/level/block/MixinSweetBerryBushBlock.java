@@ -1,8 +1,7 @@
 package com.mohistmc.banner.mixin.world.level.block;
 
-import java.util.Collections;
-
 import com.llamalad7.mixinextras.sugar.Cancellable;
+import java.util.Collections;
 import net.minecraft.core.BlockPos;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.InteractionHand;

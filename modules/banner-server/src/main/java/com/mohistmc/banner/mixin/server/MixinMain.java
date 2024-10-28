@@ -1,14 +1,12 @@
 package com.mohistmc.banner.mixin.server;
 
 import com.google.common.base.Charsets;
-
+import com.mohistmc.banner.BannerMod;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.nio.file.Path;
 import java.util.Arrays;
-
-import com.mohistmc.banner.BannerMod;
 import joptsimple.OptionParser;
 import joptsimple.OptionSet;
 import joptsimple.OptionSpec;

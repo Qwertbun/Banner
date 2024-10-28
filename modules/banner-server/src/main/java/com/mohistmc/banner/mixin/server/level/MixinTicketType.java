@@ -1,14 +1,12 @@
 package com.mohistmc.banner.mixin.server.level;
 
-import java.util.Comparator;
-
 import com.mohistmc.banner.asm.annotation.TransformAccess;
+import java.util.Comparator;
 import net.minecraft.server.level.TicketType;
 import net.minecraft.util.Unit;
 import org.bukkit.plugin.Plugin;
 import org.objectweb.asm.Opcodes;
 import org.spongepowered.asm.mixin.Mixin;
-import org.spongepowered.asm.mixin.Unique;
 
 @Mixin(TicketType.class)
 public class MixinTicketType {

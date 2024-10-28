@@ -16,10 +16,6 @@ public interface InjectionPersistentEntitySectionManager {
         return false;
     }
 
-    default boolean storeChunkSections(long i, Consumer<?> consumer, boolean callEvent) {
-        return callEvent;
-    }
-
     default void close(boolean save) throws IOException {
     }
 }

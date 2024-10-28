@@ -3,7 +3,6 @@ package com.mohistmc.banner.mixin.world.entity.moster;
 import com.llamalad7.mixinextras.sugar.Cancellable;
 import com.mohistmc.banner.asm.annotation.TransformAccess;
 import java.util.UUID;
-
 import net.minecraft.core.BlockPos;
 import net.minecraft.nbt.NbtOps;
 import net.minecraft.server.level.ServerLevel;

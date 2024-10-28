@@ -116,10 +116,6 @@ public interface InjectionEntity {
     default void setSecondsOnFire(int i, boolean callEvent) {
     }
 
-    default void banner$setSecondsOnFire(int i, boolean callEvent) {
-
-    }
-
     default SoundEvent getSwimSound0() {
         return null;
     }

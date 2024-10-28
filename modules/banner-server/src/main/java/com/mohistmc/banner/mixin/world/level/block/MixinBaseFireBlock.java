@@ -23,7 +23,7 @@ public class MixinBaseFireBlock {
         Bukkit.getPluginManager().callEvent(event);
 
         if (!event.isCancelled()) {
-            instance.banner$setSecondsOnFire(event.getDuration(), false);
+            instance.setSecondsOnFire(event.getDuration(), false);
         }
     }
 

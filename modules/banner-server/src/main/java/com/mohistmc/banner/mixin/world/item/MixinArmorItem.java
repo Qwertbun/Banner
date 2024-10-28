@@ -1,9 +1,8 @@
 package com.mohistmc.banner.mixin.world.item;
 
+import com.mohistmc.banner.bukkit.BukkitFieldHooks;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicReference;
-
-import com.mohistmc.banner.bukkit.BukkitFieldHooks;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.BlockSource;
 import net.minecraft.core.dispenser.DispenseItemBehavior;

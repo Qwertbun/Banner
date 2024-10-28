@@ -13,7 +13,6 @@ import net.minecraft.network.protocol.game.ClientboundChangeDifficultyPacket;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.Difficulty;
-import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.level.LevelSettings;
 import net.minecraft.world.level.dimension.LevelStem;
 import net.minecraft.world.level.levelgen.WorldDimensions;

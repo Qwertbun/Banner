@@ -1,8 +1,7 @@
 package com.mohistmc.banner.mixin.world.level.block.entity;
 
-import java.util.List;
-
 import com.mohistmc.banner.asm.annotation.TransformAccess;
+import java.util.List;
 import net.minecraft.core.BlockPos;
 import net.minecraft.world.effect.MobEffectInstance;
 import net.minecraft.world.entity.player.Player;
