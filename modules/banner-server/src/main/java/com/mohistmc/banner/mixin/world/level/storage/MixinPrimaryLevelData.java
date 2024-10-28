@@ -7,6 +7,7 @@ import com.mojang.serialization.DynamicOps;
 import net.minecraft.core.Registry;
 import net.minecraft.core.RegistryAccess;
 import net.minecraft.core.registries.Registries;
+import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.Tag;
 import net.minecraft.network.protocol.game.ClientboundChangeDifficultyPacket;
 import net.minecraft.server.level.ServerLevel;
@@ -53,6 +54,14 @@ public abstract class MixinPrimaryLevelData implements InjectionPrimaryLevelData
     @Redirect(method = "setTagData", at = @At(value = "INVOKE", target = "Lnet/minecraft/world/level/levelgen/WorldGenSettings;encode(Lcom/mojang/serialization/DynamicOps;Lnet/minecraft/world/level/levelgen/WorldOptions;Lnet/minecraft/core/RegistryAccess;)Lcom/mojang/serialization/DataResult;"))
     private <T extends Tag> DataResult<T> banner$customDim(DynamicOps<T> ops, WorldOptions options, RegistryAccess registry) {
         return WorldGenSettings.encode(ops, options, new WorldDimensions(this.customDimensions != null ? this.customDimensions : registry.registryOrThrow(Registries.LEVEL_STEM)));
+    }
+
+    @Inject(method = "setTagData", at = @At("RETURN"))
+    private void banner$addpdc(RegistryAccess registry, CompoundTag nbt, CompoundTag playerNBT, CallbackInfo ci) {
+        if (Bukkit.getServer() != null && world != null) {
+            nbt.putString("Bukkit.Version", Bukkit.getName() + "/" + Bukkit.getVersion() + "/" + Bukkit.getBukkitVersion()); // CraftBukkit
+            world.getWorld().storeBukkitValues(nbt); // CraftBukkit - add pdc
+        }
     }
 
     @Inject(method = "setThundering", cancellable = true, at = @At("HEAD"))

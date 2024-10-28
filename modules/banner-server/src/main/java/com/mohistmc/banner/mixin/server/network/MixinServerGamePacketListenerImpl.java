@@ -448,6 +448,8 @@ public abstract class MixinServerGamePacketListenerImpl implements InjectionServ
                     LOGGER.warn("{} (vehicle of {}) moved wrongly! {}", new Object[]{entity.getName().getString(), this.player.getName().getString(), Math.sqrt(d10)});
                 }
 
+                Location curPos = this.getCraftPlayer().getLocation(); // Spigot
+
                 entity.absMoveTo(d3, d4, d5, f, f1);
                 player.absMoveTo(d3, d4, d5, this.player.getYRot(), this.player.getXRot()); // CraftBukkit
                 boolean flag3 = worldserver.noCollision(entity, entity.getBoundingBox().deflate(0.0625D));
@@ -461,6 +463,17 @@ public abstract class MixinServerGamePacketListenerImpl implements InjectionServ
 
                 // CraftBukkit start - fire PlayerMoveEvent
                 Player player = this.getCraftPlayer();
+                // Spigot Start
+                if ( !hasMoved )
+                {
+                    lastPosX = curPos.getX();
+                    lastPosY = curPos.getY();
+                    lastPosZ = curPos.getZ();
+                    lastYaw = curPos.getYaw();
+                    lastPitch = curPos.getPitch();
+                    hasMoved = true;
+                }
+                // Spigot End
                 Location from = new Location(player.getWorld(), lastPosX, lastPosY, lastPosZ, lastYaw, lastPitch); // Get the Players previous Event location.
                 Location to = player.getLocation().clone(); // Start off the To location as the Players current location.
 

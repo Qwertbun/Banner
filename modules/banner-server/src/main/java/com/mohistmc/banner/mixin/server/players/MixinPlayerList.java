@@ -831,15 +831,15 @@ public abstract class MixinPlayerList implements InjectionPlayerList {
      * @reason functionally replaced
      */
     @Overwrite
-    public void sendLevelInfo(ServerPlayer p_11230_, ServerLevel p_11231_) {
-        WorldBorder worldborder = p_11230_.level().getWorldBorder();
-        p_11230_.connection.send(new ClientboundInitializeBorderPacket(worldborder));
-        p_11230_.connection.send(new ClientboundSetTimePacket(p_11231_.getGameTime(), p_11231_.getDayTime(), p_11231_.getGameRules().getBoolean(GameRules.RULE_DAYLIGHT)));
-        p_11230_.connection.send(new ClientboundSetDefaultSpawnPositionPacket(p_11231_.getSharedSpawnPos(), p_11231_.getSharedSpawnAngle()));
-        if (p_11231_.isRaining()) {
+    public void sendLevelInfo(ServerPlayer player, ServerLevel level) {
+        WorldBorder worldborder = player.level().getWorldBorder();
+        player.connection.send(new ClientboundInitializeBorderPacket(worldborder));
+        player.connection.send(new ClientboundSetTimePacket(level.getGameTime(), level.getDayTime(), level.getGameRules().getBoolean(GameRules.RULE_DAYLIGHT)));
+        player.connection.send(new ClientboundSetDefaultSpawnPositionPacket(level.getSharedSpawnPos(), level.getSharedSpawnAngle()));
+        if (level.isRaining()) {
             // CraftBukkit start - handle player weather
-            p_11230_.setPlayerWeather(org.bukkit.WeatherType.DOWNFALL, false);
-            p_11230_.updateWeather(-p_11231_.rainLevel, p_11231_.rainLevel, -p_11231_.thunderLevel, p_11231_.thunderLevel);
+            player.setPlayerWeather(org.bukkit.WeatherType.DOWNFALL, false);
+            player.updateWeather(-level.rainLevel, level.rainLevel, -level.thunderLevel, level.thunderLevel);
             // CraftBukkit end
         }
 
