@@ -1,6 +1,7 @@
 package com.mohistmc.banner.mixin.world.entity;
 
 import com.google.common.collect.ImmutableList;
+import com.mohistmc.banner.asm.annotation.TransformAccess;
 import com.mohistmc.banner.bukkit.BukkitSnapshotCaptures;
 import com.mohistmc.banner.injection.world.entity.InjectionEntity;
 import java.util.Optional;
@@ -79,6 +80,7 @@ import org.bukkit.projectiles.ProjectileSource;
 import org.bukkit.util.Vector;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.objectweb.asm.Opcodes;
 import org.spigotmc.ActivationRange;
 import org.spongepowered.asm.mixin.Final;
 import org.spongepowered.asm.mixin.Mixin;
@@ -983,6 +985,7 @@ public abstract class MixinEntity implements Nameable, EntityAccess, CommandSour
     }
 
     @Unique
+    @TransformAccess(Opcodes.ACC_PUBLIC | Opcodes.ACC_STATIC)
     private static int nextEntityId() {
         return ENTITY_COUNTER.incrementAndGet();
     }
