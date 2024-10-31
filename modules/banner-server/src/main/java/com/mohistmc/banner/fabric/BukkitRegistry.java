@@ -88,6 +88,7 @@ public class BukkitRegistry {
     public static Map<org.bukkit.attribute.Attribute, ResourceLocation> attributemap = new HashMap<>();
     public static Map<StatType<?>, Statistic> statisticMap = new HashMap<>();
     public static Map<net.minecraft.world.level.biome.Biome, Biome> biomeBiomeMap = new HashMap<>();
+    public static Map<MobCategory, SpawnCategory> modMobCategory = new HashMap<>();
 
     public static void registerAll(DedicatedServer console) {
         loadItems();
@@ -211,6 +212,7 @@ public class BukkitRegistry {
                 var name = category.name();
                 var spawnCategory = MohistDynamEnum.addEnum(SpawnCategory.class, name);
                 spawnCategory.isMods = true;
+                modMobCategory.put(category, spawnCategory);
                 BannerMod.LOGGER.debug("Registered {} as spawn category {}", name, spawnCategory);
             }
         }

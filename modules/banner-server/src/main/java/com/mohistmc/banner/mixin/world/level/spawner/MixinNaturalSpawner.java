@@ -1,7 +1,10 @@
 package com.mohistmc.banner.mixin.world.level.spawner;
 
+import com.mohistmc.banner.BannerMod;
 import com.mohistmc.banner.config.BannerConfig;
+import com.mohistmc.banner.fabric.BukkitRegistry;
 import com.mohistmc.banner.injection.world.level.spawner.InjectionSpawnState;
+import com.mohistmc.dynamicenum.MohistDynamEnum;
 import java.util.Objects;
 import java.util.Optional;
 import net.minecraft.core.BlockPos;
@@ -85,16 +88,26 @@ public abstract class MixinNaturalSpawner {
     public static void spawnForChunk(ServerLevel worldserver, LevelChunk chunk, NaturalSpawner.SpawnState spawnercreature_d, boolean flag, boolean flag1, boolean flag2) {
         if (!BannerConfig.spawnForChunk) return;
         worldserver.getProfiler().push("spawner");
-        MobCategory[] aenumcreaturetype = SPAWNING_CATEGORIES;
-        int i = aenumcreaturetype.length;
+        MobCategory[] var6 = SPAWNING_CATEGORIES;
+        int var7 = var6.length;
 
         LevelData worlddata = worldserver.getLevelData(); // CraftBukkit - Other mob type spawn tick rate
 
-        for (MobCategory enumcreaturetype : aenumcreaturetype) {
+        for(int var8 = 0; var8 < var7; ++var8) {
+            MobCategory mobCategory = var6[var8];
             // CraftBukkit start - Use per-world spawn limits
             boolean spawnThisTick = true;
-            int limit = enumcreaturetype.getMaxInstancesPerChunk();
-            SpawnCategory spawnCategory = CraftSpawnCategory.toBukkit(enumcreaturetype);
+            int limit = mobCategory.getMaxInstancesPerChunk();
+            SpawnCategory spawnCategory;
+            try {
+                spawnCategory = CraftSpawnCategory.toBukkit(mobCategory);
+            } catch (Exception e) {
+                var name = mobCategory.name();
+                spawnCategory = MohistDynamEnum.addEnum(SpawnCategory.class, name);
+                spawnCategory.isMods = true;
+                BukkitRegistry.modMobCategory.put(mobCategory, spawnCategory);
+                BannerMod.LOGGER.debug("Registered {} as spawn category {}", name, spawnCategory);
+            }
             if (CraftSpawnCategory.isValidForLimits(spawnCategory)) {
                 spawnThisTick = worldserver.bridge$ticksPerSpawnCategory().getLong(spawnCategory) != 0 && worlddata.getGameTime() % worldserver.bridge$ticksPerSpawnCategory().getLong(spawnCategory) == 0;
                 limit = worldserver.getWorld().getSpawnLimit(spawnCategory);
@@ -104,13 +117,13 @@ public abstract class MixinNaturalSpawner {
                 continue;
             }
 
-            if ((flag || !enumcreaturetype.isFriendly()) && (flag1 || enumcreaturetype.isFriendly()) && (flag2 || !enumcreaturetype.isPersistent()) && ((InjectionSpawnState) spawnercreature_d).canSpawnForCategory(enumcreaturetype, chunk.getPos(), limit)) {
+            if ((flag || !mobCategory.isFriendly()) && (flag1 || mobCategory.isFriendly()) && (flag2 || !mobCategory.isPersistent()) && ((InjectionSpawnState) spawnercreature_d).canSpawnForCategory(mobCategory, chunk.getPos(), limit)) {
                 // CraftBukkit end
                 Objects.requireNonNull(spawnercreature_d);
                 NaturalSpawner.SpawnPredicate spawnercreature_c = spawnercreature_d::canSpawn;
 
                 Objects.requireNonNull(spawnercreature_d);
-                spawnCategoryForChunk(enumcreaturetype, worldserver, chunk, spawnercreature_c, spawnercreature_d::afterSpawn);
+                spawnCategoryForChunk(mobCategory, worldserver, chunk, spawnercreature_c, spawnercreature_d::afterSpawn);
             }
         }
         worldserver.getProfiler().pop();

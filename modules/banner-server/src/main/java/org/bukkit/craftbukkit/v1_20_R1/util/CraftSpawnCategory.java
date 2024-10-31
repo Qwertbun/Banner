@@ -1,5 +1,6 @@
 package org.bukkit.craftbukkit.v1_20_R1.util;
 
+import com.mohistmc.banner.fabric.BukkitRegistry;
 import net.minecraft.world.entity.MobCategory;
 import org.bukkit.entity.SpawnCategory;
 
@@ -46,6 +47,7 @@ public class CraftSpawnCategory {
     }
 
     public static SpawnCategory toBukkit(MobCategory enumCreatureType) {
+        if (BukkitRegistry.modMobCategory.containsKey(enumCreatureType)) return BukkitRegistry.modMobCategory.get(enumCreatureType);
         return switch (enumCreatureType) {
             case MONSTER -> SpawnCategory.MONSTER;
             case CREATURE -> SpawnCategory.ANIMAL;
