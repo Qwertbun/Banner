@@ -148,6 +148,7 @@ public abstract class MixinServerPlayer extends Player implements InjectionServe
     @Shadow public abstract void resetFallDistance();
 
     @Shadow public abstract boolean canHarmPlayer(Player other);
+    @Shadow public abstract void nextContainerCounter();
 
     // CraftBukkit start
     @Unique
@@ -697,6 +698,8 @@ public abstract class MixinServerPlayer extends Player implements InjectionServe
         return containerCounter; // CraftBukkit
     }
 
+    private boolean banner$isFakeClose = false;
+
     /**
      * @author
      * @reason
@@ -706,11 +709,15 @@ public abstract class MixinServerPlayer extends Player implements InjectionServe
         if (menu == null) {
             return OptionalInt.empty();
         } else {
+
             if (this.containerMenu != this.inventoryMenu) {
+                banner$isFakeClose = false;
                 this.closeContainer();
             }
-            this.nextContainerCounterInt();
+
+            this.nextContainerCounter();
             AbstractContainerMenu abstractContainerMenu = menu.createMenu(this.containerCounter, this.getInventory(), this);
+
             if (abstractContainerMenu != null) {
                 abstractContainerMenu.setTitle(menu.getDisplayName());
                 boolean cancelled = false;
@@ -732,9 +739,9 @@ public abstract class MixinServerPlayer extends Player implements InjectionServe
 
                 return OptionalInt.empty();
             } else {
+                this.containerMenu = abstractContainerMenu; // CraftBukkit
                 this.connection.send(new ClientboundOpenScreenPacket(abstractContainerMenu.containerId, abstractContainerMenu.getType(), menu.getDisplayName()));
                 this.initMenu(abstractContainerMenu);
-                this.containerMenu = abstractContainerMenu;
                 return OptionalInt.of(this.containerCounter);
             }
         }
@@ -767,11 +774,8 @@ public abstract class MixinServerPlayer extends Player implements InjectionServe
 
     @Inject(method = "closeContainer", at = @At("HEAD"))
     private void banner$closeMenu(CallbackInfo ci) {
-        if (this.containerMenu != this.inventoryMenu) {
-            var old = BukkitSnapshotCaptures.getContainerOwner();
-            BukkitSnapshotCaptures.captureContainerOwner(this);
-            CraftEventFactory.handleInventoryCloseEvent(this);
-            BukkitSnapshotCaptures.captureContainerOwner(old);
+        if (banner$isFakeClose) {
+            ci.cancel();
         }
     }
 
