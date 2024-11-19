@@ -19,20 +19,25 @@ import java.util.function.Consumer;
 public class PluginFixManager {
 
 
-    public static byte[] injectPluginFix(String className, byte[] clazz) {
+    public static byte[] injectPluginFix(String mainClass, String className, byte[] clazz) {
         if (className.endsWith("PaperLib")) {
             return patch(clazz, PluginFixManager::removePaper);
         }
         if (className.equals("com.comphenix.protocol.ProtocolConfig")) {
             return removeProtocolASM(clazz);
         }
-        if (className.endsWith("com.sk89q.worldedit.bukkit.WorldEditPlugin")) {
+        if (mainClass.equals("com.sk89q.worldedit.bukkit.WorldEditPlugin")) {
+            System.setProperty("worldedit.bukkit.adapter", "com.sk89q.worldedit.bukkit.adapter.impl.v1_20_R1.PaperweightAdapter");
+        }
+        if (mainClass.contains("FastAsyncWorldEdit")) {
             System.setProperty("worldedit.bukkit.adapter", "com.sk89q.worldedit.bukkit.adapter.impl.fawe.v1_20_R1.PaperweightFaweAdapter");
         }
+
         Consumer<ClassNode> patcher = switch (className) {
             case "com.sk89q.worldedit.bukkit.BukkitAdapter" -> WorldEdit::handleBukkitAdapter;
             case "com.sk89q.worldedit.bukkit.adapter.Refraction" -> WorldEdit::handlePickName;
-            case "com.sk89q.worldedit.bukkit.adapter.impl.v1_20_R1.PaperweightAdapter$SpigotWatchdog" -> WorldEdit::handleWatchdog;
+            case "com.sk89q.worldedit.bukkit.adapter.impl.v1_20_R1.PaperweightAdapter$SpigotWatchdog" ->
+                    WorldEdit::handleWatchdog;
             case "com.earth2me.essentials.utils.VersionUtil" -> node -> helloWorld(node, 110, 109);
             case "net.ess3.nms.refl.providers.ReflServerStateProvider" -> node -> helloWorld(node, "u", "U");
             case "net.Zrips.CMILib.Reflections" -> node -> helloWorld(node, "bR", "field_7512");
