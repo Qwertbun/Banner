@@ -139,6 +139,7 @@ public class BannerConfig {
     public static boolean velocityEnabled;
     public static String velocitySecret;
     public static double WatchDogTimeOut;
+    public static String Watchdogtimetodo;
     public static boolean spawnForChunk;
     public static boolean NoRaining;
 
@@ -176,5 +177,6 @@ public class BannerConfig {
 
         networkmanager_debug = getBoolean("networkmanager.debug", false);
         networkmanager_intercept = getList("networkmanager.intercept", Collections.emptyList());
+        Watchdogtimetodo = getString("Watchdogtimetodo", "restart");
     }
 }

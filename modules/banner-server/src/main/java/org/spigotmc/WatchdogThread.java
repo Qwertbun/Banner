@@ -7,7 +7,10 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import com.mohistmc.banner.bukkit.BukkitMethodHooks;
+import com.mohistmc.banner.config.BannerConfig;
 import org.bukkit.Bukkit;
+
+import static org.bukkit.Bukkit.shutdown;
 
 public class WatchdogThread extends Thread
 {
@@ -97,10 +100,13 @@ public class WatchdogThread extends Thread
                     WatchdogThread.dumpThread( thread, log );
                 }
                 log.log( Level.SEVERE, "------------------------------" );
-
-                if ( this.restart && !BukkitMethodHooks.getServer().hasStopped() )
-                {
-                    RestartCommand.restart();
+                if (BannerConfig.Watchdogtimetodo == "restart"){
+                    if ( this.restart && !BukkitMethodHooks.getServer().hasStopped() )
+                    {
+                        RestartCommand.restart();
+                    }
+                }else {
+                    shutdown();
                 }
                 break;
             }
