@@ -908,6 +908,11 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
         Preconditions.checkArgument(location.getWorld() != null, "location.world");
         location.checkFinite();
 
+        // TODO Fix chunk loading
+        if (!location.getChunk().isLoaded()) {
+            location.getChunk().load();
+        }
+
         ServerPlayer entity = getHandle();
 
         if (getHealth() == 0 || entity.isRemoved()) {

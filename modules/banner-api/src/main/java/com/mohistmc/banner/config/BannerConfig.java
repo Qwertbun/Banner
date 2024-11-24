@@ -141,7 +141,9 @@ public class BannerConfig {
     public static double WatchDogTimeOut;
     public static String Watchdogtimetodo;
     public static boolean spawnForChunk;
+    public static boolean spawnForNatural;
     public static boolean NoRaining;
+    public static boolean SkyLight15;
 
     public static boolean networkmanager_debug;
     public static List<String> networkmanager_intercept;
@@ -164,6 +166,7 @@ public class BannerConfig {
         server_thread = getInt("threadpriority.server_thread", 8);
         nospawnEntity = getList("entity.nospawn", Collections.emptyList());
         spawnForChunk = getBoolean("entity.spawnForChunk", true);
+        spawnForNatural = getBoolean("entity.spawnForNatural", true);
         clear_item = getBoolean("entity.clear.item.enable", false);
         clear_item__whitelist = getList("entity.clear.item.whitelist", Collections.emptyList());
         clear_item__msg = getString("entity.clear.item.msg", "[Server] Cleaned up %size% drops");
@@ -178,5 +181,6 @@ public class BannerConfig {
         networkmanager_debug = getBoolean("networkmanager.debug", false);
         networkmanager_intercept = getList("networkmanager.intercept", Collections.emptyList());
         Watchdogtimetodo = getString("Watchdogtimetodo", "restart");
+        SkyLight15 = getBoolean("SkyLight15", false);
     }
 }

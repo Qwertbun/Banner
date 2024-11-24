@@ -375,12 +375,21 @@ public abstract class MixinServerLevel extends Level implements WorldGenLevel, I
         return this.sendParticles(type, posX, posY, posZ, particleCount, xOffset, yOffset, zOffset, speed);
     }
 
+    @Inject(method = "addEntity", cancellable = true, at = @At(value = "HEAD"))
+    private void banner$canAddEntity(Entity entityIn, CallbackInfoReturnable<Boolean> cir) {
+        CreatureSpawnEvent.SpawnReason reason = banner$reason.get() == null ? CreatureSpawnEvent.SpawnReason.DEFAULT : banner$reason.get();
+        if (!BannerConfig.spawnForChunk && reason.equals(SpawnReason.CHUNK_GEN)) {
+            cir.setReturnValue(false);
+        }
+
+        if (!BannerConfig.spawnForNatural && reason.equals(SpawnReason.NATURAL)) {
+            cir.setReturnValue(false);
+        }
+    }
+
     @Inject(method = "addEntity", cancellable = true, at = @At(value = "INVOKE", target = "Lnet/minecraft/world/level/entity/PersistentEntitySectionManager;addNewEntity(Lnet/minecraft/world/level/entity/EntityAccess;)Z"))
     private void banner$addEntityEvent(Entity entityIn, CallbackInfoReturnable<Boolean> cir) {
         CreatureSpawnEvent.SpawnReason reason = banner$reason.get() == null ? CreatureSpawnEvent.SpawnReason.DEFAULT : banner$reason.get();
-        if (!BannerConfig.spawnForChunk && (reason.equals(SpawnReason.NATURAL) || reason.equals(SpawnReason.CHUNK_GEN))) {
-            cir.setReturnValue(false);
-        }
         banner$reason.set(null);
         if (DistValidate.isValid((LevelAccessor) this) && !CraftEventFactory.doEntityAddEventCalling((ServerLevel) (Object) this, entityIn, reason)) {
             cir.setReturnValue(false);

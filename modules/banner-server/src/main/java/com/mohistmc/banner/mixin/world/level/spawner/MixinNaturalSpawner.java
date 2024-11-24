@@ -135,6 +135,7 @@ public abstract class MixinNaturalSpawner {
      */
     @Overwrite
     public static void spawnCategoryForPosition(MobCategory category, ServerLevel level, ChunkAccess chunk, BlockPos pos, NaturalSpawner.SpawnPredicate filter, NaturalSpawner.AfterSpawnCallback callback) {
+        if (!BannerConfig.spawnForNatural) return;
         StructureManager structuremanager = level.structureManager();
         ChunkGenerator chunkgenerator = level.getChunkSource().getGenerator();
         int i = pos.getY();
