@@ -288,7 +288,6 @@ public abstract class MixinServerPlayerGameMode implements InjectionServerPlayer
             }
 
             event = new BlockBreakEvent(bblock, this.player.getBukkitEntity());
-            banner$event.set(event);
 
             // Sword + Creative mode pre-cancel
             event.setCancelled(isSwordNoBreak);
@@ -304,6 +303,7 @@ public abstract class MixinServerPlayerGameMode implements InjectionServerPlayer
             }
 
             this.level.getCraftServer().getPluginManager().callEvent(event);
+            banner$event.set(event);
 
             if (event.isCancelled()) {
                 if (isSwordNoBreak) {
@@ -344,8 +344,9 @@ public abstract class MixinServerPlayerGameMode implements InjectionServerPlayer
 
         // Drop event experience
         if (this.level.removeBlock(pos, false) && banner$event.get() != null) {
-            this.level.getBlockState(pos).getBlock().popExperience(this.level, pos, banner$event.getAndSet(null).getExpToDrop());
+            this.level.getBlockState(pos).getBlock().popExperience(this.level, pos, banner$event.get().getExpToDrop());
         }
+        banner$event.set(null);
         cir.setReturnValue(true);
     }
 
