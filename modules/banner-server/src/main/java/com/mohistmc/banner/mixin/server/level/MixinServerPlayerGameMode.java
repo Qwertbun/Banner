@@ -276,21 +276,21 @@ public abstract class MixinServerPlayerGameMode implements InjectionServerPlayer
      */
     @Overwrite
     public boolean destroyBlock(BlockPos pos) {
-        BukkitSnapshotCaptures.BlockBreakEventContext context = BukkitSnapshotCaptures.popPrimaryBlockBreakEvent();
-        if (context != null) {
-            BlockBreakEvent breakEvent = context.getEvent();
-            List<ItemEntity> blockDrops = context.getBlockDrops();
-            org.bukkit.block.BlockState state = context.getBlockBreakPlayerState();
+        if (BukkitSnapshotCaptures.popPrimaryBlockBreakEvent() != null) {
+            BlockBreakEvent breakEvent = BukkitSnapshotCaptures.popPrimaryBlockBreakEvent().getEvent();
+            List<ItemEntity> blockDrops = BukkitSnapshotCaptures.popPrimaryBlockBreakEvent().getBlockDrops();
+            org.bukkit.block.BlockState state = BukkitSnapshotCaptures.popPrimaryBlockBreakEvent().getBlockBreakPlayerState();
 
             if (blockDrops != null && (breakEvent == null || breakEvent.isDropItems())) {
                 CraftBlock craftBlock = CraftBlock.at(this.level, pos);
                 CraftEventFactory.handleBlockDropItemEvent(craftBlock, state, this.player, blockDrops);
             }
         }
+
+        BlockState blockState = this.level.getBlockState(pos);
         BlockEntity blockEntity;
         Block block;
         boolean bl;
-        BlockState blockState = this.level.getBlockState(pos);
         if (!BlockEventDispatcher.onBlockBreak((ServerPlayerGameMode) (Object) this, this.level, this.player, pos, blockState, !this.player.getMainHandItem().getItem().canAttackBlock(blockState, this.level, pos, this.player))) {
             return false;
         } else {

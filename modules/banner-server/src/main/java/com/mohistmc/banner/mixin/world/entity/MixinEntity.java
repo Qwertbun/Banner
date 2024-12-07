@@ -89,6 +89,7 @@ import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.ModifyArg;
 import org.spongepowered.asm.mixin.injection.Redirect;
+import org.spongepowered.asm.mixin.injection.Slice;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 import org.spongepowered.asm.mixin.injection.callback.LocalCapture;
@@ -261,8 +262,6 @@ public abstract class MixinEntity implements Nameable, EntityAccess, CommandSour
     @Unique
     public BlockPos lastLavaContact;
     @Unique
-    private static transient BlockPos banner$damageEventBlock;
-    @Unique
     private static final int CURRENT_LEVEL = 2;
     @Unique
     @javax.annotation.Nullable
@@ -377,14 +376,17 @@ public abstract class MixinEntity implements Nameable, EntityAccess, CommandSour
             return;
         }
         EntityPoseChangeEvent event = new EntityPoseChangeEvent(this.getBukkitEntity(), org.bukkit.entity.Pose.values()[pose.ordinal()]);
-        Bukkit.getPluginManager().callEvent(event);
+        if (this.valid) {
+            Bukkit.getPluginManager().callEvent(event);
+        }
     }
 
-    @Inject(method = "setRot", at = @At(value = "HEAD"))
+    @Inject(method = "setRot", at = @At(value = "HEAD"), cancellable = true)
     public void banner$infCheck(float yaw, float pitch, CallbackInfo ci) {
         // CraftBukkit start - yaw was sometimes set to NaN, so we need to set it back to 0
         if (Float.isNaN(yaw)) {
-            yaw = 0;
+            this.yRot = 0;
+            ci.cancel();
         }
 
         if (yaw == Float.POSITIVE_INFINITY || yaw == Float.NEGATIVE_INFINITY) {
@@ -392,12 +394,14 @@ public abstract class MixinEntity implements Nameable, EntityAccess, CommandSour
                 this.level.getCraftServer().getLogger().warning(this.getScoreboardName() + " was caught trying to crash the server with an invalid yaw");
                 ((CraftPlayer) this.getBukkitEntity()).kickPlayer("Infinite yaw (Hacking?)");
             }
-            yaw = 0;
+            this.yRot = 0;
+            ci.cancel();
         }
 
         // pitch was sometimes set to NaN, so we need to set it back to 0
         if (Float.isNaN(pitch)) {
-            pitch = 0;
+            this.xRot = 0;
+            ci.cancel();
         }
 
         if (pitch == Float.POSITIVE_INFINITY || pitch == Float.NEGATIVE_INFINITY) {
@@ -405,7 +409,8 @@ public abstract class MixinEntity implements Nameable, EntityAccess, CommandSour
                 this.level.getCraftServer().getLogger().warning(this.getScoreboardName() + " was caught trying to crash the server with an invalid pitch");
                 ((CraftPlayer) this.getBukkitEntity()).kickPlayer("Infinite pitch (Hacking?)");
             }
-            pitch = 0;
+            this.xRot = 0;
+            ci.cancel();
         }
         // CraftBukkit end
     }
@@ -455,42 +460,41 @@ public abstract class MixinEntity implements Nameable, EntityAccess, CommandSour
         return instance.lava().bridge$directBlock(damager);
     }
 
-    @ModifyArg(method = "move", index = 1, at = @At(value = "INVOKE", target = "Lnet/minecraft/world/level/block/Block;stepOn(Lnet/minecraft/world/level/Level;Lnet/minecraft/core/BlockPos;Lnet/minecraft/world/level/block/state/BlockState;Lnet/minecraft/world/entity/Entity;)V"))
-    private BlockPos banner$captureBlockWalk(BlockPos pos) {
-        banner$damageEventBlock = pos;
-        return pos;
-    }
-
-    @Inject(method = "move", at = @At(value = "INVOKE", shift = At.Shift.AFTER, target = "Lnet/minecraft/world/level/block/Block;stepOn(Lnet/minecraft/world/level/Level;Lnet/minecraft/core/BlockPos;Lnet/minecraft/world/level/block/state/BlockState;Lnet/minecraft/world/entity/Entity;)V"))
-    private void banner$resetBlockWalk(MoverType type, Vec3 pos, CallbackInfo ci) {
-        banner$damageEventBlock = null;
-    }
-
-    @Inject(method = "move", at = @At(value = "INVOKE",
-            target = "Lnet/minecraft/world/entity/Entity;onGround()Z",
-            ordinal = 1))
-    private void banner$move$blockCollide(MoverType type, Vec3 pos, CallbackInfo ci, @Local(ordinal = 1) Vec3 vec3) {
+    @Shadow protected abstract Vec3 collide(Vec3 vec);
+    @Inject(method = "move", at = @At(value = "INVOKE", target = "Lnet/minecraft/world/entity/Entity;onGround()Z"),
+            slice = @Slice(from = @At(value = "INVOKE", target = "Lnet/minecraft/world/level/block/Block;updateEntityAfterFallOn(Lnet/minecraft/world/level/BlockGetter;Lnet/minecraft/world/entity/Entity;)V")))
+    private void banner$move$blockCollide(MoverType type, Vec3 pos, CallbackInfo ci) {
         // CraftBukkit start
         if (horizontalCollision && getBukkitEntity() instanceof Vehicle) {
             Vehicle vehicle = (Vehicle) this.getBukkitEntity();
             org.bukkit.block.Block cbBlock = this.level.getWorld().getBlockAt(Mth.floor(this.getX()), Mth.floor(this.getY()), Mth.floor(this.getZ()));
-
-            if (pos.x > vec3.x) {
+            Vec3 vec3d = this.collide(pos);
+            if (pos.x > vec3d.x) {
                 cbBlock = cbBlock.getRelative(BlockFace.EAST);
-            } else if (pos.x < vec3.x) {
+            } else if (pos.x < vec3d.x) {
                 cbBlock = cbBlock.getRelative(BlockFace.WEST);
-            } else if (pos.z > vec3.z) {
+            } else if (pos.z > vec3d.z) {
                 cbBlock = cbBlock.getRelative(BlockFace.SOUTH);
-            } else if (pos.z < vec3.z) {
+            } else if (pos.z < vec3d.z) {
                 cbBlock = cbBlock.getRelative(BlockFace.NORTH);
             }
 
-            if (!cbBlock.getType().isAir()) {
+            if (cbBlock.getType() != org.bukkit.Material.AIR) {
                 VehicleBlockCollisionEvent event = new VehicleBlockCollisionEvent(vehicle, cbBlock);
                 level.getCraftServer().getPluginManager().callEvent(event);
             }
         }
         // CraftBukkit end
+    }
+
+    @Inject(method = "absMoveTo(DDD)V", at = @At("RETURN"))
+    private void banner$loadChunk(double x, double y, double z, CallbackInfo ci) {
+        if (this.valid) this.level().getChunk((int) Math.floor(this.getX()) >> 4, (int) Math.floor(this.getZ()) >> 4);
+    }
+
+    @Inject(method = "absMoveTo(DDDFF)V", at = @At("RETURN"))
+    private void banner$loadChunk0(double x, double y, double z, float yRot, float xRot, CallbackInfo ci) {
+        if (this.valid) this.level().getChunk((int) Math.floor(this.getX()) >> 4, (int) Math.floor(this.getZ()) >> 4);
     }
 
     @Inject(method = "saveAsPassenger", cancellable = true, at = @At(value = "INVOKE_ASSIGN", target = "Lnet/minecraft/world/entity/Entity;getEncodeId()Ljava/lang/String;"))
@@ -625,11 +629,11 @@ public abstract class MixinEntity implements Nameable, EntityAccess, CommandSour
         }
     }
 
-    @Inject(method = "startRiding(Lnet/minecraft/world/entity/Entity;Z)Z", cancellable = true, locals = LocalCapture.CAPTURE_FAILHARD, at = @At(value = "INVOKE", shift = At.Shift.BEFORE, target = "Lnet/minecraft/world/entity/Entity;setPose(Lnet/minecraft/world/entity/Pose;)V"))
+    @Inject(method = "startRiding(Lnet/minecraft/world/entity/Entity;Z)Z", cancellable = true, at = @At(value = "INVOKE", target = "Lnet/minecraft/world/entity/Entity;isPassenger()Z"))
     public void banner$startRiding(Entity vehicle, boolean force, CallbackInfoReturnable<Boolean> cir) {
         // CraftBukkit start
-        if (vehicle.getBukkitEntity() instanceof Vehicle && this.getBukkitEntity() instanceof org.bukkit.entity.LivingEntity) {
-            VehicleEnterEvent event = new VehicleEnterEvent((Vehicle) vehicle.getBukkitEntity(), this.getBukkitEntity());
+        if (vehicle.getBukkitEntity() instanceof Vehicle vehicle1 && this.getBukkitEntity() instanceof org.bukkit.entity.LivingEntity) {
+            VehicleEnterEvent event = new VehicleEnterEvent(vehicle1, this.getBukkitEntity());
             // Suppress during worldgen
             if (this.valid) {
                 Bukkit.getPluginManager().callEvent(event);
@@ -651,58 +655,51 @@ public abstract class MixinEntity implements Nameable, EntityAccess, CommandSour
         // Spigot end
     }
 
-    @Redirect(method = "removeVehicle", at = @At(value = "INVOKE", target = "Lnet/minecraft/world/entity/Entity;removePassenger(Lnet/minecraft/world/entity/Entity;)V"))
-    private void banner$stopRiding(Entity entity, Entity passenger) {
-        if (!entity.banner$removePassenger(passenger)) {
+    private final AtomicBoolean banner$dismountCancelled = new AtomicBoolean(false);
+
+    @Inject(method = "removeVehicle", locals = LocalCapture.CAPTURE_FAILHARD, at = @At(value = "INVOKE", shift = At.Shift.AFTER, target = "Lnet/minecraft/world/entity/Entity;removePassenger(Lnet/minecraft/world/entity/Entity;)V"))
+    private void banner$stopRiding(CallbackInfo ci, Entity entity) {
+        if (banner$dismountCancelled.getAndSet(false)) {
             this.vehicle = entity;
         }
     }
 
-    @Override
-    public boolean banner$removePassenger(Entity entity) {
-        if (entity.getVehicle() == (Object) this) {
-            throw new IllegalStateException("Use x.stopRiding(y), not y.removePassenger(x)");
-        } else {
-            // CraftBukkit start
-            CraftEntity craft = (CraftEntity) (entity.getBukkitEntity().getVehicle());
-            Entity orig = craft == null ? null : craft.getHandle();
-            if (getBukkitEntity() instanceof Vehicle && (entity.getBukkitEntity() instanceof org.bukkit.entity.LivingEntity)) {
-                VehicleExitEvent event = new VehicleExitEvent(
-                        (Vehicle) getBukkitEntity(),
-                        (org.bukkit.entity.LivingEntity) (entity.getBukkitEntity()
-                        ));
-                // Suppress during worldgen
-                if (this.valid) {
-                    Bukkit.getPluginManager().callEvent(event);
-                }
-                CraftEntity craftn = (CraftEntity) (entity.getBukkitEntity().getVehicle());
-                Entity n = craftn == null ? null : craftn.getHandle();
-                if (event.isCancelled() || n != orig) {
-                    return false;
-                }
-            }
-            // CraftBukkit end
-            // Spigot start
-            org.spigotmc.event.entity.EntityDismountEvent event = new org.spigotmc.event.entity.EntityDismountEvent((entity).getBukkitEntity(), this.getBukkitEntity());
+    @Inject(method = "removePassenger", cancellable = true, at = @At("HEAD"))
+    public void banner$removePassenger(Entity passenger, CallbackInfo ci) {
+        if (passenger.getVehicle() == (Object) this) {
+            return;
+        }
+        // CraftBukkit start
+        CraftEntity craft = (CraftEntity) (passenger.getBukkitEntity().getVehicle());
+        Entity orig = craft == null ? null : craft.getHandle();
+        if (getBukkitEntity() instanceof Vehicle && (passenger.getBukkitEntity() instanceof org.bukkit.entity.LivingEntity)) {
+            VehicleExitEvent event = new VehicleExitEvent(
+                    (Vehicle) getBukkitEntity(),
+                    (org.bukkit.entity.LivingEntity) (passenger.getBukkitEntity()
+                    ));
             // Suppress during worldgen
             if (this.valid) {
                 Bukkit.getPluginManager().callEvent(event);
             }
-            if (event.isCancelled()) {
-                return false;
+            CraftEntity craftn = (CraftEntity) (passenger.getBukkitEntity().getVehicle());
+            Entity n = craftn == null ? null : craftn.getHandle();
+            if (event.isCancelled() || n != orig) {
+                ci.cancel();
+                banner$dismountCancelled.set(true);
+                return;
             }
-            // Spigot end
-            if (this.passengers.size() == 1 && this.passengers.get(0) == entity) {
-                this.passengers = ImmutableList.of();
-            } else {
-                this.passengers = this.passengers.stream().filter((entity1) -> entity1 != entity)
-                        .collect(ImmutableList.toImmutableList());
-            }
-
-            entity.boardingCooldown = 60;
-            this.gameEvent(GameEvent.ENTITY_DISMOUNT, entity);
         }
-        return true; // CraftBukkit
+        // CraftBukkit end
+        // Spigot start
+        org.spigotmc.event.entity.EntityDismountEvent event = new org.spigotmc.event.entity.EntityDismountEvent((passenger).getBukkitEntity(), this.getBukkitEntity());
+        // Suppress during worldgen
+        if (this.valid) {
+            Bukkit.getPluginManager().callEvent(event);
+        }
+        if (event.isCancelled()) {
+            ci.cancel();
+            banner$dismountCancelled.set(true);
+        }
     }
 
     @Inject(method = "setSwimming", cancellable = true, at = @At(value = "HEAD"))
@@ -847,11 +844,6 @@ public abstract class MixinEntity implements Nameable, EntityAccess, CommandSour
         if (len > 64) maxZ = minZ + 64.0;
         this.bb = new AABB(minX, minY, minZ, maxX, maxY, maxZ);
         // CraftBukkit end
-    }
-
-    @Inject(method = "absMoveTo(DDD)V", at = @At("RETURN"))
-    private void banner$loadChunk(double x, double y, double z, CallbackInfo ci) {
-        if (this.valid) this.level().getChunk((int) Math.floor(this.getX()) >> 4, (int) Math.floor(this.getZ()) >> 4);
     }
 
     @Override
