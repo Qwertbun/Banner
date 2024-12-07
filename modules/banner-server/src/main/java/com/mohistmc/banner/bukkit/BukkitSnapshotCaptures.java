@@ -1,5 +1,6 @@
 package com.mohistmc.banner.bukkit;
 
+import lombok.Getter;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.server.WorldLoader;
@@ -86,6 +87,13 @@ public class BukkitSnapshotCaptures {
             return blockBreakEventStack.peek().getBlockDrops();
         }
         return null;
+    }
+
+    public static boolean getBlockBreakDropItems() {
+        if (!blockBreakEventStack.empty()) {
+            return blockBreakEventStack.peek().isDropItems();
+        }
+        return true;
     }
 
     public static BlockBreakEventContext popPrimaryBlockBreakEvent() {
@@ -362,27 +370,24 @@ public class BukkitSnapshotCaptures {
     public static class BlockBreakEventContext {
 
         final private BlockBreakEvent blockBreakEvent;
+        @Getter
         final private ArrayList<ItemEntity> blockDrops;
+        @Getter
         final private BlockState blockBreakPlayerState;
         final private boolean primary;
+        @Getter
+        private final boolean dropItems;
 
         public BlockBreakEventContext(BlockBreakEvent event, boolean primary) {
             this.blockBreakEvent = event;
             this.blockDrops = new ArrayList<>();
             this.blockBreakPlayerState = event.getBlock().getState();
             this.primary = primary;
+            this.dropItems = event.isDropItems();
         }
 
         public BlockBreakEvent getEvent() {
             return blockBreakEvent;
-        }
-
-        public ArrayList<ItemEntity> getBlockDrops() {
-            return blockDrops;
-        }
-
-        public BlockState getBlockBreakPlayerState() {
-            return blockBreakPlayerState;
         }
 
         public void mergeAllDrops(List<BlockBreakEventContext> others) {
