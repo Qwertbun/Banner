@@ -543,7 +543,16 @@ public abstract class MixinServerGamePacketListenerImpl implements InjectionServ
             at = @At(value = "FIELD", shift = At.Shift.AFTER, target = "Lnet/minecraft/server/network/ServerGamePacketListenerImpl;awaitingPositionFromClient:Lnet/minecraft/world/phys/Vec3;"),
             slice = @Slice(from = @At(value = "INVOKE", target = "Lnet/minecraft/server/level/ServerPlayer;isChangingDimension()Z")))
     private void banner$updateLoc(ServerboundAcceptTeleportationPacket packetIn, CallbackInfo ci) {
-        this.player.serverLevel().getChunkSource().move(this.player);
+        if (this.player.bridge$valid()) {
+            this.player.serverLevel().getChunkSource().move(this.player);
+        }
+    }
+
+    @Inject(method = "handleAcceptTeleportPacket", cancellable = true, at = @At(value = "FIELD", target = "Lnet/minecraft/server/network/ServerGamePacketListenerImpl;awaitingTeleport:I"))
+    private void banner$confirm(ServerboundAcceptTeleportationPacket packetIn, CallbackInfo ci) {
+        if (this.awaitingPositionFromClient == null) {
+            ci.cancel();
+        }
     }
 
     @Inject(method = "handleRecipeBookChangeSettingsPacket",
@@ -2042,6 +2051,13 @@ public abstract class MixinServerGamePacketListenerImpl implements InjectionServ
             f1 = to.getPitch();
         }
 
+        if (Float.isNaN(yaw)) {
+            f = 0.0f;
+        }
+        if (Float.isNaN(pitch)) {
+            f1 = 0.0f;
+        }
+
         this.internalTeleport(d0, d1, d2, f, f1, set);
         return event.isCancelled(); // CraftBukkit - Return event status
     }
@@ -2077,7 +2093,11 @@ public abstract class MixinServerGamePacketListenerImpl implements InjectionServ
         if (++this.awaitingTeleport == Integer.MAX_VALUE) {
             this.awaitingTeleport = 0;
         }
-
+        this.lastPosX = this.awaitingPositionFromClient.x;
+        this.lastPosY = this.awaitingPositionFromClient.y;
+        this.lastPosZ = this.awaitingPositionFromClient.z;
+        this.lastYaw = f;
+        this.lastPitch = f1;
         this.awaitingTeleportTime = this.tickCount;
         this.player.absMoveTo(pX, pY, pZ, pYaw, pPitch);
         this.player.connection.send(new ClientboundPlayerPositionPacket(pX - d0, pY - d1, pZ - d2, pYaw - f, pPitch - f1, pRelativeSet, this.awaitingTeleport));

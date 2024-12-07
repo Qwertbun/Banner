@@ -86,7 +86,7 @@ public abstract class MixinPlayer extends LivingEntity implements InjectionPlaye
     @Unique
     public boolean fauxSleeping;
     @Unique
-    public int oldLevel = -1;
+    public int oldLevel;
     @Unique
     protected AtomicReference<Boolean> banner$forceSleep = new AtomicReference<>();
     @Unique
@@ -94,6 +94,7 @@ public abstract class MixinPlayer extends LivingEntity implements InjectionPlaye
 
     @Inject(method = "<init>", at = @At("RETURN"))
     private void banner$init(CallbackInfo ci) {
+        oldLevel = -1;
         this.foodData.setEntityhuman((net.minecraft.world.entity.player.Player) (Object) this);
         this.enderChestInventory.setOwner(this.getBukkitEntity());
     }
@@ -186,15 +187,14 @@ public abstract class MixinPlayer extends LivingEntity implements InjectionPlaye
     @Overwrite
     private void respawnEntityOnShoulder(CompoundTag entityCompound) {
         if (!this.level().isClientSide && !entityCompound.isEmpty()) {
-            EntityType.create(entityCompound, this.level()).map((entity) -> { // CraftBukkit
+            EntityType.create(entityCompound, this.level()).ifPresent((entity) -> { // CraftBukkit
                 if (entity instanceof TamableAnimal) {
                     ((TamableAnimal) entity).setOwnerUUID(this.uuid);
                 }
 
-                entity.setPos(this.getX(), this.getY() + 0.699999988079071D, this.getZ());
-                boolean canAdd =  ((ServerLevel)this.level()).addWithUUID(entity);
+                entity.setPos(this.getX(), this.getY() + 0.7F, this.getZ());
+                boolean canAdd = ((ServerLevel) this.level()).addWithUUID(entity);
                 spawnEntityFromShoulder.set(canAdd);
-                return ((ServerLevel) this.level()).addWithUUID(entity, CreatureSpawnEvent.SpawnReason.SHOULDER_ENTITY); // CraftBukkit
             }); // CraftBukkit
         }
 
