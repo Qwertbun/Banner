@@ -60,8 +60,6 @@ public abstract class MixinPlayer extends LivingEntity implements InjectionPlaye
 
     @Shadow protected PlayerEnderChestContainer enderChestInventory;
 
-    @Shadow @Final private Abilities abilities;
-
     @Shadow public abstract void tick();
 
     @Shadow private long timeEntitySatOnShoulder;
@@ -77,7 +75,6 @@ public abstract class MixinPlayer extends LivingEntity implements InjectionPlaye
     @Shadow @Final private Inventory inventory;
 
     @Shadow public abstract Either<Player.BedSleepingProblem, net.minecraft.util.Unit> startSleepInBed(BlockPos bedPos);
-    @Shadow public abstract boolean blockActionRestricted(Level level, BlockPos pos, GameType gameMode);
 
     protected MixinPlayer(EntityType<? extends LivingEntity> entityType, Level level) {
         super(entityType, level);
