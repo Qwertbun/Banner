@@ -41,6 +41,7 @@ public class PluginFixManager {
             case "com.earth2me.essentials.utils.VersionUtil" -> node -> helloWorld(node, 110, 109);
             case "net.ess3.nms.refl.providers.ReflServerStateProvider" -> node -> helloWorld(node, "u", "U");
             case "net.Zrips.CMILib.Reflections" -> node -> helloWorld(node, "bR", "field_7512");
+            case "io.lumine.mythic.core.volatilecode.v1_20_R1.VolatileEntityHandlerImpl" -> node -> helloWorld(node, "c", "d"); // mythicmobs-5.8
             default -> null;
         };
         return patcher == null ? clazz : patch(clazz, patcher);
