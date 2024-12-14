@@ -576,14 +576,14 @@ public final class SimplePluginManager implements PluginManager {
     public void callEvent(@NotNull Event event) {
         if (event.isAsynchronous()) {
             if (Thread.holdsLock(this)) {
-                throw new IllegalStateException(event.getEventName() + " cannot be triggered asynchronously from inside synchronized code.");
+                return;
             }
             if (server.isPrimaryThread()) {
-                throw new IllegalStateException(event.getEventName() + " cannot be triggered asynchronously from primary server thread.");
+                return;
             }
         } else {
             if (!server.isPrimaryThread()) {
-                throw new IllegalStateException(event.getEventName() + " cannot be triggered asynchronously from another thread.");
+                return;
             }
         }
 
